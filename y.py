@@ -13,13 +13,10 @@ FFMPEG_PATH = r"C:\Users\Rajesh\Downloads\ffmpeg-2026-06-04-git-c27a3b12e3-essen
 
 app = ctk.CTk()
 app.geometry("800x600")
-app.title("🎬 Advanced YouTube Downloader")
-
-# ---------------- VARIABLES ---------------- #
+app.title("YouTube Downloader Pro")
 
 folder_var = ctk.StringVar()
 quality_var = ctk.StringVar(value="720p")
-download_type = ctk.StringVar(value="Video")
 
 # ---------------- FUNCTIONS ---------------- #
 
@@ -34,20 +31,18 @@ def open_folder():
         os.startfile(folder)
 
 def get_format():
-    quality = quality_var.get()
+    q = quality_var.get()
 
-    if quality == "360p":
+    if q == "360p":
         return "18"
-
-    elif quality == "720p":
+    elif q == "720p":
         return "136+140"
-
-    elif quality == "1080p":
+    elif q == "1080p":
         return "137+140"
 
-    return "18"
+    return "bestvideo+bestaudio/best"
 
-def download():
+def download_video():
 
     url = url_entry.get().strip()
     folder = folder_var.get()
@@ -69,22 +64,18 @@ def download():
             percent = d.get("_percent_str", "0%")
 
             progress_label.configure(
-                text=f"Downloading {percent}"
+                text=f"⬇ Downloading {percent}"
             )
 
             try:
-                value = float(
-                    percent.replace("%", "").strip()
-                ) / 100
-
+                value = float(percent.replace("%", "").strip()) / 100
                 progress_bar.set(value)
-
             except:
                 pass
 
         elif d["status"] == "finished":
             progress_label.configure(
-                text="🔄 Processing..."
+                text="🔄 Merging Audio + Video..."
             )
 
     def run():
@@ -92,37 +83,19 @@ def download():
         try:
 
             status_label.configure(
-                text="⬇ Download Started..."
+                text="🚀 Download Started"
             )
 
             ydl_opts = {
+                "format": get_format(),
+                "merge_output_format": "mp4",
                 "ffmpeg_location": FFMPEG_PATH,
                 "outtmpl": f"{folder}/%(title)s.%(ext)s",
                 "ignoreerrors": True,
-                "progress_hooks": [progress_hook],
-                "merge_output_format": "mp4",
                 "noplaylist": False,
-                "writethumbnail": True
+                "progress_hooks": [progress_hook],
+                "keepvideo": False,
             }
-
-            if download_type.get() == "Video":
-
-                ydl_opts["format"] = get_format()
-
-                ydl_opts["postprocessors"] = [{
-                    "key": "FFmpegVideoRemuxer",
-                    "preferedformat": "mp4"
-                }]
-
-            else:
-
-                ydl_opts["format"] = "bestaudio/best"
-
-                ydl_opts["postprocessors"] = [{
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "mp3",
-                    "preferredquality": "192"
-                }]
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
@@ -140,7 +113,7 @@ def download():
         except Exception as e:
 
             status_label.configure(
-                text=f"❌ {str(e)}"
+                text=f"❌ {e}"
             )
 
     threading.Thread(
@@ -152,7 +125,7 @@ def download():
 
 title = ctk.CTkLabel(
     app,
-    text="🎬 Advanced YouTube Downloader",
+    text="🎬 YouTube Downloader Pro",
     font=("Arial", 28, "bold")
 )
 title.pack(pady=20)
@@ -160,7 +133,7 @@ title.pack(pady=20)
 url_entry = ctk.CTkEntry(
     app,
     width=650,
-    placeholder_text="Paste YouTube Video or Playlist URL"
+    placeholder_text="Paste YouTube Video / Playlist URL"
 )
 url_entry.pack(pady=10)
 
@@ -179,19 +152,8 @@ ctk.CTkLabel(
 
 ctk.CTkLabel(
     app,
-    text="Download Type"
-).pack(pady=(20, 5))
-
-ctk.CTkOptionMenu(
-    app,
-    variable=download_type,
-    values=["Video", "MP3"]
-).pack()
-
-ctk.CTkLabel(
-    app,
-    text="Quality"
-).pack(pady=(20, 5))
+    text="Select Quality"
+).pack(pady=(15, 5))
 
 ctk.CTkOptionMenu(
     app,
@@ -202,7 +164,7 @@ ctk.CTkOptionMenu(
 ctk.CTkButton(
     app,
     text="⬇ Download",
-    command=download,
+    command=download_video,
     width=250,
     height=40
 ).pack(pady=20)
